@@ -4,7 +4,7 @@ In this tutorial, you will learn how to install, configure, and use Cowrie, a me
 
 This setup runs Cowrie on a Tailscale Zero-Trust server, meaning your real system remains hidden from the public internet. Only the honeypot ports are exposed on your public IP, allowing you to safely observe attacks without risking your actual server.
 
-When Cowrie is stopped, the exposed ports close and your server becomes hidden again. You can also place custom “bait” files or folders to gather more attacker information (FOR EDUCATIONAL PURPOSES ONLY).
+When Cowrie is stopped, the exposed ports close and your server becomes hidden again. 
 
 Later in this repository, additional tools will be added, including:
 
