@@ -1,11 +1,3 @@
-What we will learn?
-
-In this tutorial, you will learn how to install and use **Cowrie***. When Cowrie is running on your server, you can capture **attackers** who try to **hack** into your server. You will also learn how to configure Cowrie and create realistic-looking **fake files**, so the attacker wastes time inside the honeypot instead of on your real server.
-
-**This tutorial uses Cowrie on your Tailscale server**, which means your real system stays hidden from public attackers. However, Cowrie itself will still be exposed on your public IP address, because we want to see who is trying to attack us.
-
-When you stop the Cowrie process on your server, your server becomes hidden again (port what using cowrie will automatic hidden in your Tailscale).
-You can also place your own payload or files with interesting names to collect attacker information (FOR EDUCATIONAL PURPOSES ONLY).
 
 ---
 
