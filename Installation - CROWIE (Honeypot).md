@@ -1,3 +1,15 @@
+⚠️ IMPORTANT: Port 22 will NOT be publicly visible until your VPS provider (Hetzner, Hostkey, Contabo…) opens it in their network firewall!
+
+ ```
+sudo ufw allow 22/tcp
+sudo ufw reload
+
+ ```
+Check status
+
+ ```
+sudo ufw status
+ ```
 
 ---
 
@@ -76,6 +88,17 @@ These iptables rules redirect real SSH (port 22) and Telnet (port 23) traffic to
 This allows attackers to connect normally to your public SSH/Telnet ports, while actually being routed into the honeypot instead of your real system.
 
 ### This commands type at sudo user on your server. 
+
+Your firewall will be deleted but dont worry.
+Ubuntu/Debian cannot run **UFW** and **iptables-persistent** at the same time because both packages try to control the very same netfilter/iptables rules.  
+When you install `iptables-persistent`, the package manager automatically removes UFW (this is intentional and documented behaviour).
+
+After the change:
+- All firewall rules are now managed directly by iptables  
+- Custom NAT redirects (port 22 → 2222, 23 → 2223) survive reboots  
+- The setup becomes cleaner and more reliable for honeypot use
+
+This is the recommended and most common setup in production Cowrie deployments.
  ```
 sudo iptables -t nat -A PREROUTING -p tcp --dport 22 -j REDIRECT --to-port 2222
 sudo iptables -t nat -A PREROUTING -p tcp --dport 23 -j REDIRECT --to-port 2223
