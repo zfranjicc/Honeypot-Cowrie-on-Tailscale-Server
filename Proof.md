@@ -5,6 +5,7 @@ The screenshot below shows a remote machine connecting to the server over SSH.
 The attacker successfully logs into the fake environment (Cowrie), believing it is a real Linux server.
 
 Cowrie presents a real-looking shell prompt:
+
     admin@svr04:~$
 
     
