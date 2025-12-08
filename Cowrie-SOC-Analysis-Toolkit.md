@@ -6,7 +6,8 @@
 Scripts look like this :
 
 ---
-<img width="467" height="347" alt="Screenshot 2025-12-07 183356" src="https://github.com/user-attachments/assets/ebe63cb9-d8ee-434d-b6b0-a79b12fc2ee3" />
+
+<img width="600" height="397" alt="Screenshot 2025-12-08 211820" src="https://github.com/user-attachments/assets/c8caff76-fc60-4f3f-baca-1382c7ebc021" />
 
 
 
