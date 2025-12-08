@@ -16,88 +16,149 @@ sudo nano /usr/local/bin/cowview
 
 Past script 
  ```
+╔══════════════════════════════════════════════╗
+║ Cowrie Log Analysis Toolkit                  ║
+║ by zfranjic                                  ║
+╚══════════════════════════════════════════════╝
+
+ [1] Live logs (tail -f)
+ [2] View current log
+ [3] Search all logs
+ [4] View rotated logs
+ [5] All attacker IPs (top 40)
+ [6] Brute-force statistics
+ [7] All executed commands
+ [8] Top 20 attackers by commands
+ [9] Top 25 attack commands + analysis
+ [10] Exit
+
+Choose [1-10]^Z
+[38]+  Stopped                 sudo cowview
+admin@Baldwing:~$ sudo cat /usr/local/bin/cowview
 #!/bin/bash
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[1;34m'
+PURPLE='\033[1;35m'
+CYAN='\033[1;36m'
+WHITE='\033[1;37m'
+NC='\033[0m'
+LOG_DIR="/home/cowrie/cowrie/var/log/cowrie"
+LOGS="$LOG_DIR/cowrie.json*"
 
-LOGDIR="/home/cowrie/cowrie/var/log/cowrie"
-
-menu() {
-    echo "Cowrie Log Viewer (SOC Toolkit)"
-    echo "-----------------------------------"
-    echo "[1] Live logs"
-    echo "[2] Full cowrie.log"
-    echo "[3] Search in logs"
-    echo "[4] View rotated logs (*.gz)"
-    echo "[5] Show only attacker IPs"
-    echo "[6] Brute-force attempt counter"
-    echo "[7] Extract attacker commands"
-    echo "[8] Top attackers by number of commands"
-    echo "[9] Exit"
-    echo ""
-    read -p "Choose an option: " option
+banner() {
+  clear
+  echo -e "${CYAN}╔══════════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║ Cowrie Log Analysis Toolkit                  ║${NC}"
+  echo -e "${CYAN}║ by zfranjic                                  ║${NC}"
+  echo -e "${CYAN}╚══════════════════════════════════════════════╝${NC}"
+  echo
 }
 
-show_ips() {
-    echo "Unique attacker IPs:"
-    grep -hoP '"src_ip": "\K[0-9\.]+' "$LOGDIR"/*.log* | sort -u
-}
+while true; do
+  banner
+  echo -e " ${GREEN}[1]${NC} Live logs (tail -f)"
+  echo -e " ${GREEN}[2]${NC} View current log"
+  echo -e " ${GREEN}[3]${NC} Search all logs"
+  echo -e " ${GREEN}[4]${NC} View rotated logs"
+  echo -e " ${BLUE}[5]${NC} All attacker IPs (top 40)"
+  echo -e " ${YELLOW}[6]${NC} Brute-force statistics"
+  echo -e " ${PURPLE}[7]${NC} All executed commands"
+  echo -e " ${RED}[8]${NC} Top 20 attackers by commands"
+  echo -e " ${RED}[9]${NC} Top 25 attack commands + analysis"
+  echo -e " ${WHITE}[10]${NC} Exit"
+  echo
+  read -p "Choose [1-10]" opt
+  echo
 
-bruteforce_count() {
-    echo " Brute-force attempts:"
-    grep -h "login attempt" "$LOGDIR"/cowrie.log* | wc -l
-}
+  case $opt in
 
-extract_commands() {
-    echo "Commands executed by attackers:"
-    grep -h '"input"' "$LOGDIR"/cowrie.log* | jq -r '.input' | sort -u | less -R
-}
+    1) tail -f $LOG_DIR/cowrie.json ;;
 
-top_attackers() {
-    echo " Top attackers by number of commands:"
-    grep -h '"src_ip"' "$LOGDIR"/cowrie.log* \
-        | grep -oP '"src_ip": "\K[0-9\.]+' \
-        | sort | uniq -c | sort -nr | head -20
-}
+    2) less $LOG_DIR/cowrie.json ;;
 
-menu
-
-case $option in
-    1)
-        echo " Live log stream..."
-        tail -f "$LOGDIR/cowrie.log"
-        ;;
-    2)
-        less -R "$LOGDIR/cowrie.log"
-        ;;
     3)
-        read -p "Search keyword: " search
-        grep -iR "$search" "$LOGDIR" | less -R
-        ;;
+      read -p "Search keyword: " kw
+      grep -i "$kw" $LOGS 2>/dev/null | less -R
+      ;;
+
     4)
-        echo " Rotated logs:"
-        ls "$LOGDIR"/*.gz 2>/dev/null
-        echo ""
-        read -p "Pick a file to open: " file
-        zcat "$file" | less -R
-        ;;
+      ls -lh $LOG_DIR/cowrie.json*.gz 2>/dev/null || echo "No rotated logs"
+      read -p "File to open: " f
+      zless "$LOG_DIR/$f" 2>/dev/null
+      read -r
+      ;;
+
     5)
-        show_ips
-        ;;
+      echo -e "${BLUE}   TOP 40 ATTACKER IPs${NC}"
+      echo -e "${BLUE}   ═════════════════════${NC}"
+      jq -r 'select(.eventid=="cowrie.session.connect") | .src_ip' $LOGS 2>/dev/null | sort | uniq -c | sort -nr | head -40 | nl
+      read -r
+      ;;
+
     6)
-        bruteforce_count
-        ;;
+      echo -e "${YELLOW}   BRUTE-FORCE STATISTICS (ALL logs)${NC}"
+      echo -e "${YELLOW}   ═══════════════════════════════════════${NC}"
+      FAILED=$(jq -s '[.. | select(.eventid? == "cowrie.login.failed")] | length' $LOGS 2>/dev/null || echo 0)
+      SUCCESS=$(jq -s '[.. | select(.eventid? == "cowrie.login.success")] | length' $LOGS 2>/dev/null || echo 0)
+      TOTAL=$((FAILED + SUCCESS))
+      printf "   ${RED}Failed attempts     : %'d${NC}\n" "$FAILED"
+      printf "   ${GREEN}Successful logins (honeypot): %'d${NC}\n" "$SUCCESS"
+      printf "   ${YELLOW}───────────────────────────────────────${NC}\n"
+      printf "   ${WHITE}TOTAL SESSIONS      : %'d${NC}\n" "$TOTAL"
+      echo
+      read -r
+      ;;
+
     7)
-        extract_commands
-        ;;
+      jq -r 'select(.eventid=="cowrie.command.input") | [.timestamp,.src_ip,.input] | @tsv' $LOGS 2>/dev/null | less -R
+      ;;
+
     8)
-        top_attackers
-        ;;
+      echo " TOP 20 ATTACKERS BY EXECUTED COMMANDS"
+      echo " ═══════════════════════════════════════════════════════════"
+      echo " #      COMMANDS count        IP ADDRESS"
+      echo " ───────────────────────────────────────────────────────────"
+      jq -r 'select(.eventid=="cowrie.command.input") | .src_ip' $LOGS 2>/dev/null | \
+        sort | uniq -c | sort -nr | head -20 | nl | \
+        awk '{printf " %2s   %8s      %s\n", $1, $2, $3}'
+      echo
+      read -r
+      ;;
     9)
-        exit 0
-        ;;
-    *)
-        echo "Invalid option."
-        ;;
-esac
+      echo -e "${PURPLE}   TOP 25 ATTACK COMMANDS + ANALYSIS${NC}"
+      echo -e "${YELLOW}   ═════════════════════════════════════════════${NC}"
+      echo -e "${YELLOW}   #   COUNT  COMMAND                                     ANALYSIS${NC}"
+      echo -e "${YELLOW}   ────────────────────────────────────────────────${NC}"
+      jq -r 'select(.eventid=="cowrie.command.input") | .input' $LOGS 2>/dev/null | \
+        sort | uniq -c | sort -nr | head -25 | nl | \
+        while read -r n c cmd; do
+          case "$cmd" in
+            *wget*|*curl*|*tftp*) col=$RED;   ana="Payload download – CRITICAL" ;;
+            *uname*|*whoami*|*id*) col=$YELLOW; ana="Reconnaissance" ;;
+            *sh|*bash|*chmod*) col=$RED;   ana="Shell attempt" ;;
+            *rm*|*cat\ /dev/null*) col=$YELLOW; ana="Anti-forensics" ;;
+            *) col=$GREEN; ana="Other" ;;
+          esac
+          printf "   ${WHITE}%2s${NC} ${col}%7s${NC}   %-42.42s  ${col}%s${NC}\n" "$n" "$c" "$cmd" "$ana"
+        done
+      read -r
+      ;;
+
+    10)
+      clear
+      echo -e "${GREEN}╔══════════════════════════════════════════════╗${NC}"
+      echo -e "${GREEN}║        Cowview zatvoren. Hvala!              ║${NC}"
+      echo -e "${GREEN}║              by zfranjic                     ║${NC}"
+      echo -e "${GREEN}╚══════════════════════════════════════════════╝${NC}"
+      exit 0
+      ;;
+
+    *) echo -e "${RED}Wrong Command, try again${NC}"; sleep 1 ;;
+
+  esac
+done
  ```
 Give premission 
  ```
