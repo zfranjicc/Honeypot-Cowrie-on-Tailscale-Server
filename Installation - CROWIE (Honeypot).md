@@ -163,3 +163,4 @@ Use commands ``` less -R  ``` + (name of logs)
 
 
 
+
