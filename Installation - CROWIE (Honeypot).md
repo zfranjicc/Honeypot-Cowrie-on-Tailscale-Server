@@ -89,7 +89,14 @@ This allows attackers to connect normally to your public SSH/Telnet ports, while
 
 ### This commands type at sudo user on your server. 
 
-Your firewall will be deleted but dont worry.
+⚠️ WARNING  
+Installing iptables-persistent will REMOVE UFW.
+This is expected behaviour because both tools manage the same netfilter rules.
+
+Before proceeding:
+- Ensure you have console / out-of-band access to the VPS
+- Confirm SSH access will remain available through Cowrie redirection
+
 Ubuntu/Debian cannot run **UFW** and **iptables-persistent** at the same time because both packages try to control the very same netfilter/iptables rules.  
 When you install `iptables-persistent`, the package manager automatically removes UFW (this is intentional and documented behaviour).
 
